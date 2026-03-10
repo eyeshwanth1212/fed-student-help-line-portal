@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Help Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Poppins',sans-serif;
+}
+
+body{
+min-height:100vh;
+background:linear-gradient(135deg,#667eea,#764ba2);
+}
+
+header{
+text-align:center;
+padding:20px;
+color:white;
+font-size:24px;
+font-weight:600;
+}
+
+nav{
+text-align:center;
+padding:15px;
+}
+
+nav button{
+background:rgba(255,255,255,0.2);
+border:none;
+padding:10px 18px;
+margin:6px;
+border-radius:25px;
+color:white;
+cursor:pointer;
+transition:0.3s;
+}
+
+nav button:hover{
+background:white;
+color:#764ba2;
+transform:scale(1.05);
+}
+
+.container{
+padding:20px;
+max-width:900px;
+margin:auto;
+}
+
+.card{
+background:rgba(255,255,255,0.2);
+padding:20px;
+margin:15px 0;
+border-radius:15px;
+color:white;
+box-shadow:0 8px 20px rgba(0,0,0,0.2);
+}
+
+input,textarea,select{
+width:100%;
+padding:10px;
+margin:8px 0;
+border-radius:8px;
+border:none;
+}
+
+button.submit{
+background:#ffcc70;
+border:none;
+padding:10px;
+border-radius:20px;
+cursor:pointer;
+font-weight:600;
+}
+
+button.submit:hover{
+background:#ffb347;
+}
+
+.auth-box{
+max-width:400px;
+margin:80px auto;
+padding:30px;
+border-radius:20px;
+background:rgba(255,255,255,0.2);
+color:white;
+box-shadow:0 10px 25px rgba(0,0,0,0.3);
+}
+
+.hidden{display:none;}
+
+.admin-answer{
+margin-top:10px;
+padding:10px;
+background:rgba(0,0,0,0.3);
+border-radius:10px;
+}
+
+.status-box{
+margin-top:10px;
+font-weight:bold;
+color:#ffeaa7;
+}
+</style>
+</head>
+
+<body>
+
+<header>🎓 Student Help Portal</header>
+
+<!-- AUTH -->
+<div id="authSection" class="auth-box">
+<h3 id="authTitle">Login</h3>
+<input type="text" id="username" placeholder="Username">
+<input type="password" id="password" placeholder="Password">
+<button class="submit" id="authButton" onclick="login()">Login</button>
+<p style="text-align:center;margin-top:10px;">
+<a href="#" onclick="toggleAuth()" style="color:#ffcc70;">Don't have account? Register</a>
+</p>
+</div>
+
+<!-- STUDENT -->
+<div id="studentPortal" class="hidden">
+<nav>
+<button onclick="showStudentSection('home')">Home</button>
+<button onclick="showStudentSection('doubt')">Post Doubt</button>
+<button onclick="showStudentSection('complaint')">Complaint</button>
+<button onclick="logout()">Logout</button>
+</nav>
+
+<div class="container">
+
+<div id="home">
+<h2 style="color:white;">All Doubts</h2>
+<div id="studentPosts"></div>
+
+<h2 style="color:white;margin-top:20px;">My Complaints</h2>
+<div id="studentComplaints"></div>
+</div>
+
+<div id="doubt" class="hidden">
+<div class="card">
+<h3>Post a Doubt</h3>
+<input type="text" id="title" placeholder="Doubt title">
+<textarea id="description" placeholder="Doubt description"></textarea>
+<button class="submit" onclick="addPost()">Submit</button>
+</div>
+</div>
+
+<div id="complaint" class="hidden">
+<div class="card">
+<h3>Raise Complaint</h3>
+<input type="text" id="complaintTitle" placeholder="Complaint title">
+<textarea id="complaintDesc" placeholder="Complaint description"></textarea>
+<button class="submit" onclick="addComplaint()">Submit</button>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- ADMIN -->
+<div id="adminPortal" class="hidden">
+<nav>
+<button onclick="showAdminSection('adminDoubts')">Manage Doubts</button>
+<button onclick="showAdminSection('adminComplaints')">Manage Complaints</button>
+<button onclick="logout()">Logout</button>
+</nav>
+
+<div class="container">
+
+<div id="adminDoubts">
+<h3 style="color:white;">Answer Student Doubts</h3>
+<div id="adminPosts"></div>
+</div>
+
+<div id="adminComplaints" class="hidden">
+<h3 style="color:white;">Manage Complaints</h3>
+<div id="adminComplaintList"></div>
+</div>
+
+</div>
+</div>
+
+<script>
+
+let isLoginMode=true;
+let currentUser="";
+let users=JSON.parse(localStorage.getItem("users"))||[];
+let posts=JSON.parse(localStorage.getItem("posts"))||[];
+let complaints=JSON.parse(localStorage.getItem("complaints"))||[];
+
+// Toggle Login/Register
+function toggleAuth(){
+isLoginMode=!isLoginMode;
+document.getElementById("authTitle").innerText=isLoginMode?"Login":"Register";
+document.getElementById("authButton").innerText=isLoginMode?"Login":"Register";
+document.getElementById("authButton").setAttribute("onclick",isLoginMode?"login()":"register()");
+}
+
+// Register
+function register(){
+let user=username.value;
+let pass=password.value;
+if(user===""||pass==="") return alert("Fill all fields");
+users.push({username:user,password:pass});
+localStorage.setItem("users",JSON.stringify(users));
+alert("Registration Successful");
+toggleAuth();
+}
+
+// Login
+function login(){
+let user=username.value;
+let pass=password.value;
+
+if(user==="admin"&&pass==="admin123"){
+authSection.classList.add("hidden");
+adminPortal.classList.remove("hidden");
+displayAdminPosts();
+displayAdminComplaints();
+return;
+}
+
+let valid=users.find(u=>u.username===user&&u.password===pass);
+if(valid){
+currentUser=user;
+authSection.classList.add("hidden");
+studentPortal.classList.remove("hidden");
+displayStudentPosts();
+displayStudentComplaints();
+}else{
+alert("Invalid Credentials");
+}
+}
+
+function logout(){location.reload();}
+
+// Student Sections
+function showStudentSection(id){
+home.classList.add("hidden");
+doubt.classList.add("hidden");
+complaint.classList.add("hidden");
+document.getElementById(id).classList.remove("hidden");
+}
+
+// Admin Sections
+function showAdminSection(id){
+adminDoubts.classList.add("hidden");
+adminComplaints.classList.add("hidden");
+document.getElementById(id).classList.remove("hidden");
+}
+
+// Add Doubt
+function addPost(){
+let title=document.getElementById("title").value;
+let desc=document.getElementById("description").value;
+if(title===""||desc==="") return alert("Fill all fields");
+posts.push({title,desc,answer:""});
+localStorage.setItem("posts",JSON.stringify(posts));
+displayStudentPosts();
+showStudentSection("home");
+}
+
+// Display Student Posts
+function displayStudentPosts(){
+let div=studentPosts;
+div.innerHTML="";
+posts.forEach(p=>{
+div.innerHTML+=`
+<div class="card">
+<h4>${p.title}</h4>
+<p>${p.desc}</p>
+${p.answer?`<div class="admin-answer"><b>Admin:</b> ${p.answer}</div>`:""}
+</div>`;
+});
+}
+
+// Display Admin Posts
+function displayAdminPosts(){
+let div=adminPosts;
+div.innerHTML="";
+posts.forEach((p,i)=>{
+div.innerHTML+=`
+<div class="card">
+<h4>${p.title}</h4>
+<p>${p.desc}</p>
+<textarea id="ans${i}">${p.answer||""}</textarea>
+<button class="submit" onclick="submitAnswer(${i})">Submit</button>
+</div>`;
+});
+}
+
+function submitAnswer(i){
+posts[i].answer=document.getElementById("ans"+i).value;
+localStorage.setItem("posts",JSON.stringify(posts));
+alert("Answer Submitted");
+displayAdminPosts();
+}
+
+// Complaint System
+function addComplaint(){
+let title=complaintTitle.value;
+let desc=complaintDesc.value;
+if(title===""||desc==="") return alert("Fill all fields");
+complaints.push({user:currentUser,title,desc,status:"Pending"});
+localStorage.setItem("complaints",JSON.stringify(complaints));
+displayStudentComplaints();
+showStudentSection("home");
+}
+
+function displayStudentComplaints(){
+let div=studentComplaints;
+div.innerHTML="";
+complaints.filter(c=>c.user===currentUser).forEach(c=>{
+div.innerHTML+=`
+<div class="card">
+<h4>${c.title}</h4>
+<p>${c.desc}</p>
+<div class="status-box">Status: ${c.status}</div>
+</div>`;
+});
+}
+
+function displayAdminComplaints(){
+let div=adminComplaintList;
+div.innerHTML="";
+complaints.forEach((c,i)=>{
+div.innerHTML+=`
+<div class="card">
+<h4>${c.title}</h4>
+<p>${c.desc}</p>
+<p><b>User:</b> ${c.user}</p>
+<select onchange="updateStatus(${i},this.value)">
+<option ${c.status==="Pending"?"selected":""}>Pending</option>
+<option ${c.status==="In Progress"?"selected":""}>In Progress</option>
+<option ${c.status==="Resolved"?"selected":""}>Resolved</option>
+</select>
+</div>`;
+});
+}
+
+function updateStatus(i,status){
+complaints[i].status=status;
+localStorage.setItem("complaints",JSON.stringify(complaints));
+displayAdminComplaints();
+}
+
+</script>
+
+</body>
+</html>
